@@ -1,35 +1,83 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import { getPlayers, getPlayer, deletePlayer, createPlayer } from "./api";
+import { Player } from "./components/Player";
+import { PlayerDetails } from "./components/PlayerDetails";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [players, setPlayers] = useState([]);
+  const [player, setPlayer] = useState({});
+  const [filter, setFilter] = useState("");
+
+  useEffect(() => {
+    getPlayers().then((players) => {
+      setPlayers(players);
+    });
+  }, []);
+
+  function handlePlayerClick(playerId) {
+    getPlayer(playerId).then(setPlayer);
+  }
+
+  function handlePlayerDelete(playerId) {
+    deletePlayer(playerId).then(() => {
+      getPlayers().then((players) => {
+        setPlayers(players);
+      });
+    });
+  }
+
+  function handleSubmit(evt) {
+    evt.preventDefault();
+    const formData = new FormData(evt.target);
+    const newPlayer = Object.fromEntries(formData.entries());
+
+    createPlayer(newPlayer).then(() => {
+      getPlayers().then((players) => {
+        setPlayers(players);
+      });
+    });
+  }
+
+  function handleFilter(evt) {
+    setFilter(evt.target.value);
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div onClick={() => setPlayer({})}>
+      <h1>Puppy Bowl</h1>
+      <PlayerDetails player={player} />
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="name">Name:</label>
+        <input type="text" name="name" />
+        <label htmlFor="breed">Breed:</label>
+        <input type="text" name="breed" />
+        <button type="submit">Add Player</button>
+      </form>
+      <input type="text" name="filter" value={filter} onChange={handleFilter} />
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Breed</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {players.map((player) => {
+            return (
+              <Player
+                key={player.id}
+                player={player}
+                onClick={handlePlayerClick}
+                onDelete={handlePlayerDelete}
+              />
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
-export default App
+export default App;
